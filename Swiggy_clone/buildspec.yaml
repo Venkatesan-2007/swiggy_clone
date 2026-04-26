@@ -4,34 +4,35 @@ env:
   parameter-store:
     DOCKER_REGISTRY_USERNAME: /cicd/docker-credentials/username
     DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
-    DOCKER_REGISTRY_URL: /cicd/docker-registry/url
     SONAR_TOKEN: /cicd/sonar/sonar-token
 
 phases:
   install:
     runtime-versions:
-      python: 3.11
       java: corretto17
+    commands:
+      - echo "Installing Sonar Scanner..."
+      - export SONAR_SCANNER_VERSION=4.7.0.2747
+      - export SONAR_SCANNER_HOME=$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
+      - unzip -o sonar-scanner.zip -d $HOME/.sonar/
+      - export PATH=$SONAR_SCANNER_HOME/bin:$PATH
 
   pre_build:
     commands:
-      - echo "Installing dependencies..."
-      - echo "Performing Trivy file scan before building the image..."
+      - echo "Starting SonarQube analysis..."
 
   build:
     commands:
-      - echo "Running tests..."
-      - echo "Building Docker image..."
-      # Uncomment below when Docker is configured
-      # - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-      # - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-      # - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
+      - sonar-scanner \
+          -Dsonar.projectKey=swiggy \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://YOUR-SONAR-IP:9000 \
+          -Dsonar.login=$SONAR_TOKEN
 
   post_build:
     commands:
-      - echo "Build completed"
-      - echo "Sending email notification"
-      - aws ses send-email --from "madithati123@gmail.com" --destination "ToAddresses=madithati123@gmail.com" --message "Subject={Data=CodeBuild Status},Body={Text={Data=Build completed successfully}}" --region "us-east-1"
+      - echo "Build + Sonar analysis completed"
 
 artifacts:
   files:
