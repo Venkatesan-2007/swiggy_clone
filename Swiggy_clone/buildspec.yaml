@@ -17,18 +17,16 @@ phases:
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
       - unzip -o sonar-scanner.zip -d $HOME/.sonar/
       - export PATH=$SONAR_SCANNER_HOME/bin:$PATH
+      - sonar-scanner --version
 
   pre_build:
     commands:
       - echo "Starting SonarQube analysis..."
+      - curl -I http://34.201.73.137:9000 || true
 
   build:
     commands:
-      sonar-scanner \
-        -Dsonar.projectKey=swiggy \
-        -Dsonar.sources=. \
-        -Dsonar.host.url=http://34.201.73.137:9000 \
-        -Dsonar.login=sqp_a4c94f8747e04dc5a06f40bc41bae5cbd78bd4f9
+      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://34.201.73.137:9000 -Dsonar.login=$SONAR_TOKEN
 
   post_build:
     commands:
@@ -37,3 +35,4 @@ phases:
 artifacts:
   files:
     - appspec.yaml
+    - '**/*'
