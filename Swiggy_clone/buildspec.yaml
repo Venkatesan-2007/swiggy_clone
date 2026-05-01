@@ -1,11 +1,5 @@
 version: 0.2
 
-env:
-  parameter-store:
-    DOCKER_REGISTRY_USERNAME: /cicd/docker-credentials/username
-    DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
-    SONAR_TOKEN: /cicd/sonar/sonar-token
-
 phases:
   install:
     runtime-versions:
@@ -21,18 +15,14 @@ phases:
 
   pre_build:
     commands:
-      - echo "Starting SonarQube analysis..."
+      - echo "Checking SonarQube connectivity..."
       - curl -I http://34.201.73.137:9000 || true
 
   build:
     commands:
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://34.201.73.137:9000 -Dsonar.login=$SONAR_TOKEN
+      - echo "Running SonarQube analysis..."
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://34.201.73.137:9000 -Dsonar.login=sqp_a4c94f8747e04dc5a06f40bc41bae5cbd78bd4f9
 
   post_build:
     commands:
       - echo "Build + Sonar analysis completed"
-
-artifacts:
-  files:
-    - appspec.yaml
-    - '**/*'
